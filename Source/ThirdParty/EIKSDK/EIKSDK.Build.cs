@@ -12,6 +12,11 @@ public class EIKSDK : ModuleRules
 		get { return ModuleDirectory; }
 	}
 
+	private string EngineSDKBaseDir
+	{
+		get { return Path.Combine(Path.GetFullPath(Target.RelativeEnginePath), "Source", "ThirdParty", "EOSSDK", "SDK"); }
+	}
+
 	public virtual string SDKBinariesDir
 	{
 		get
@@ -25,13 +30,28 @@ public class EIKSDK : ModuleRules
 				return Path.Combine(SDKBaseDir, "Bin", "IOS");
 			}
 
-			return Path.Combine(SDKBaseDir, "Bin");
+			string LocalBinariesDir = Path.Combine(SDKBaseDir, "Bin");
+			if (Directory.Exists(LocalBinariesDir))
+			{
+				return LocalBinariesDir;
+			}
+
+			return Path.Combine(EngineSDKBaseDir, "Bin");
 		}
 	}
 
 	public virtual string SDKLibsDir
 	{
-		get { return Path.Combine(SDKBaseDir, "Lib"); }
+		get
+		{
+			string LocalLibsDir = Path.Combine(SDKBaseDir, "Lib");
+			if (Directory.Exists(LocalLibsDir))
+			{
+				return LocalLibsDir;
+			}
+
+			return Path.Combine(EngineSDKBaseDir, "Lib");
+		}
 	}
 
 	public virtual string SDKIncludesDir
@@ -46,7 +66,14 @@ public class EIKSDK : ModuleRules
 			{
 				return Path.Combine(SDKBinariesDir, "EOSSDK.framework", "Headers");
 			}
-			return Path.Combine(SDKBaseDir, "Include");
+
+			string LocalIncludeDir = Path.Combine(SDKBaseDir, "Include");
+			if (Directory.Exists(LocalIncludeDir))
+			{
+				return LocalIncludeDir;
+			}
+
+			return Path.Combine(EngineSDKBaseDir, "Include");
 		}
 	}
 
@@ -115,11 +142,24 @@ public class EIKSDK : ModuleRules
 			string PluginDir = Path.GetFullPath(Path.Combine(ModuleDirectory, "..", ".."));
 			string DLLFileName = "EOSSDK-Win64-Shipping.dll";
 			string DLLSourcePath = Path.Combine(PluginDir, "ThirdParty", "EIKSDK", "Bin", DLLFileName);
+			string EngineRootDir = Path.GetFullPath(Target.RelativeEnginePath);
+			string EngineSDKBinDir = Path.Combine(EngineRootDir, "Source", "ThirdParty", "EOSSDK", "SDK", "Bin");
+			string EngineSDKLibDir = Path.Combine(EngineRootDir, "Source", "ThirdParty", "EOSSDK", "SDK", "Lib");
 			string DLLTargetPath = "$(BinaryOutputDir)/" + DLLFileName;
 
 			string LIBFileName = "EOSSDK-Win64-Shipping.lib";
 			string LIBSourcePath = Path.Combine(ModuleDirectory, "Lib", LIBFileName);
 			string LIBTargetPath = "$(BinaryOutputDir)/" + LIBFileName;
+
+			if (!File.Exists(DLLSourcePath))
+			{
+				DLLSourcePath = Path.Combine(EngineSDKBinDir, DLLFileName);
+			}
+
+			if (!File.Exists(LIBSourcePath))
+			{
+				LIBSourcePath = Path.Combine(EngineSDKLibDir, LIBFileName);
+			}
 
 			if (File.Exists(DLLSourcePath))
 			{
@@ -137,6 +177,16 @@ public class EIKSDK : ModuleRules
 			else
 			{
 				Console.WriteLine("EOS Integration Kit: LIB file does not exist at the specified source path.");
+			}
+
+			if (!File.Exists(DLLSourcePath))
+			{
+				throw new BuildException($"EOS Integration Kit: unable to locate {DLLFileName} in the plugin or engine EOS SDK folders.");
+			}
+
+			if (!File.Exists(LIBSourcePath))
+			{
+				throw new BuildException($"EOS Integration Kit: unable to locate {LIBFileName} in the plugin or engine EOS SDK folders.");
 			}
 
 			// Add the import library
