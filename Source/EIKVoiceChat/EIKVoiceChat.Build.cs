@@ -12,6 +12,7 @@ namespace UnrealBuildTool.Rules
 			PCHUsage = ModuleRules.PCHUsageMode.UseExplicitOrSharedPCHs;
 
 			PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "Public"));
+			PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "Subsystem"));
 
 			PublicDependencyModuleNames.AddRange(
 				new string[]
